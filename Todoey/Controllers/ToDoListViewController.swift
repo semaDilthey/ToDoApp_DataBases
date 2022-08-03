@@ -1,88 +1,114 @@
-//
-//  ViewController.swift
-//  Todoey
-//
-//  Created by Philipp Muellauer on 02/12/2019.
-//  Copyright © 2019 App Brewery. All rights reserved.
-//
 
 import UIKit
 
 class ToDoListViewController: UITableViewController {
-
-    var itemArray = ["Buy eggs", "wash table", "destroy Demogorgon"]
+    // creating an array on items according to MVC
+    var itemArray = [Item]()
+    // provides an interface to file system for directory in domain mask
+    let dataFilePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("Items.plist")
     
-    // 1. создаем UserDefaulets для хранения массива в памяти телефона
-    let defaults = UserDefaults()
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        // 3. добавляем сохраненный из памяти массив на экран загрузки
-        if let arr = defaults.array(forKey: "ToDoListArray") as? [String] {
-            itemArray = arr
-        }
+        
+        print(dataFilePath)
+        
+        loadItems()
     }
 
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        let b = itemArray.count
-        return b
+        
+        return itemArray.count
     }
 
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "toDoItemCell", for: indexPath)
-        cell.textLabel?.text = itemArray[indexPath.row]
+        
+        let item = itemArray[indexPath.row]
+        
+        cell.textLabel?.text = item.title
+        
+        
+        
+        // making a property for checkmark
+        cell.accessoryType = item.done ? .checkmark : .none
+        
+//        if item.done == true {
+//            cell.accessoryType = .checkmark
+//        } else {
+//            cell.accessoryType = .none
+//        }
         
         return cell
     }
     
-    //MARK - add new item Bar
+    // - MARK - add new item Bar
     @IBAction func AddButtonPressed(_ sender: UIBarButtonItem) {
         
         var textField = UITextField()
-        
+        // calling an alert window by tapping button
         let alert = UIAlertController(title: "Add new todoItem", message: "", preferredStyle: .alert)
-        
-        let action = UIAlertAction(title: "Add!", style: .default) { (alert) in
-            
-            if let itBe = textField.text {
-                self.itemArray.append(itBe)
-                self.tableView.reloadData()
-            } else {
-                print("lol")
-            }
-            //2. Сохраняем наш новый массив в юзерДефолтс под ключем ТуДуЛистЭрэй
-            self.defaults.set(self.itemArray, forKey: "ToDoListArray")
-
+        // button in button, so it will add newItem to out array and tableview
+        let action = UIAlertAction(title: "Add!", style: .default) { (action) in
+            let newItem = Item() // new item equal to Item model
+            newItem.title = textField.text! //name of new item equal to text we wrote in textfield
+            self.itemArray.append(newItem) // appending item to out array
+            self.saveItems()
         }
-        
+        // adding a textField to alert window
         alert.addTextField { (alertTextField) in
-            alertTextField.placeholder = "Create new Item"
+            alertTextField.placeholder = "Create new Item" // giving a placeholder to textField
             textField = alertTextField
-            
         }
         
+        // adding action to alert window
         alert.addAction(action)
-        
         present(alert, animated: true, completion: nil)
         print("yyay")
         
     }
     
-    
-}
-
-extension ToDoListViewController {
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        // print("\(itemArray[indexPath.row])")
         
-        if tableView.cellForRow(at: indexPath)?.accessoryType == .checkmark {
-            tableView.cellForRow(at: indexPath)?.accessoryType = .none
-        } else {
-            tableView.cellForRow(at: indexPath)?.accessoryType = .checkmark
-        }
+        // making a property for "done"
+//        if itemArray[indexPath.row].done == false {
+//            itemArray[indexPath.row].done = true
+//        } else {
+//            itemArray[indexPath.row].done = false
+//        }
         
+        // making a property for "done"
+        itemArray[indexPath.row].done = !itemArray[indexPath.row].done
+        
+        saveItems()
         
         tableView.deselectRow(at: indexPath, animated: true)
     }
+    
+    // writing a methods that will encode array and write into path. also is will reload our tableView data
+    func saveItems() {
+        //encoder - new obj
+        let encoder = PropertyListEncoder()
+        // encoder will encode our plist and write it to file path
+        do {
+            let data = try encoder.encode(itemArray)
+            try data.write(to: dataFilePath!)
+        } catch {
+            print("Error encoding item array, \(error)")
+        }
+        self.tableView.reloadData() // reloading our table
+    }
+    
+    func loadItems() {
+        if let data = try? Data(contentsOf: dataFilePath!) {
+            let decoder = PropertyListDecoder()
+            do {
+            itemArray = try decoder.decode([Item].self, from: data)
+            } catch {
+                print("Error decoding item array, \(error)")
+            }
+        }
+    }
+    
+    
 }
-

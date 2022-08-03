@@ -8,6 +8,7 @@
 
 import Foundation
 
-class Item {
-    
+class Item : Codable {  // item type is able to encode himself into plist of json
+    var title : String = ""
+    var done : Bool = false
 }
