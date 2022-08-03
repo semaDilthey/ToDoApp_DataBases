@@ -1,19 +1,20 @@
 
 import UIKit
+import CoreData
 
 class ToDoListViewController: UITableViewController {
     // creating an array on items according to MVC
     var itemArray = [Item]()
     // provides an interface to file system for directory in domain mask
     let dataFilePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("Items.plist")
-    
+    let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
         print(dataFilePath)
         
-        loadItems()
+       loadItems()
     }
 
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
@@ -50,8 +51,11 @@ class ToDoListViewController: UITableViewController {
         let alert = UIAlertController(title: "Add new todoItem", message: "", preferredStyle: .alert)
         // button in button, so it will add newItem to out array and tableview
         let action = UIAlertAction(title: "Add!", style: .default) { (action) in
-            let newItem = Item() // new item equal to Item model
+            
+    
+            let newItem = Item(context: self.context)  // new item equal to Item model
             newItem.title = textField.text! //name of new item equal to text we wrote in textfield
+            newItem.done = false
             self.itemArray.append(newItem) // appending item to out array
             self.saveItems()
         }
@@ -85,30 +89,26 @@ class ToDoListViewController: UITableViewController {
         tableView.deselectRow(at: indexPath, animated: true)
     }
     
-    // writing a methods that will encode array and write into path. also is will reload our tableView data
+    // this func saving new items to data base
     func saveItems() {
-        //encoder - new obj
-        let encoder = PropertyListEncoder()
-        // encoder will encode our plist and write it to file path
+       
         do {
-            let data = try encoder.encode(itemArray)
-            try data.write(to: dataFilePath!)
+           try context.save()
         } catch {
-            print("Error encoding item array, \(error)")
+            print("Error \(error)")
         }
         self.tableView.reloadData() // reloading our table
     }
     
+    //this func load existing items to our screen
     func loadItems() {
-        if let data = try? Data(contentsOf: dataFilePath!) {
-            let decoder = PropertyListDecoder()
-            do {
-            itemArray = try decoder.decode([Item].self, from: data)
-            } catch {
-                print("Error decoding item array, \(error)")
-            }
+        //here we have to write NSFetchRequest just because
+        let request : NSFetchRequest<Item> = Item.fetchRequest()
+        do{
+            itemArray = try context.fetch(request)
+        } catch {
+            print("error")
         }
     }
-    
     
 }
