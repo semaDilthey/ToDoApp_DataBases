@@ -101,14 +101,46 @@ class ToDoListViewController: UITableViewController {
     }
     
     //this func load existing items to our screen
-    func loadItems() {
+    func loadItems(with request: NSFetchRequest<Item> = Item.fetchRequest()) {
         //here we have to write NSFetchRequest just because
-        let request : NSFetchRequest<Item> = Item.fetchRequest()
+    
         do{
             itemArray = try context.fetch(request)
         } catch {
             print("error")
         }
+        
+        tableView.reloadData()
     }
     
+}
+
+//MARK: - Search bar methods
+
+extension ToDoListViewController : UISearchBarDelegate {
+    
+    func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
+        
+        let request : NSFetchRequest<Item> = Item.fetchRequest()
+        
+        request.predicate = NSPredicate(format: "title CONTAINS[cd] %@", searchBar.text!)
+        
+        request.sortDescriptors = [NSSortDescriptor(key: "title", ascending: true)]
+        
+        loadItems(with: request)
+//        do{ 1  ЭТОТ БРОК В ФУНКЦИИ
+        //            itemArray = try context.fetch(request)
+//        } catch {
+//            print("error")
+//        }
+        
+    }
+    
+    func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
+        loadItems()
+        //searchBar.endEditing(true) orrr
+        DispatchQueue.main.async {
+            searchBar.resignFirstResponder()
+        }
+    }
 }
