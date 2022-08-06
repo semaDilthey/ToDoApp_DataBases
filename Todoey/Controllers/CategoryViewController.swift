@@ -18,7 +18,7 @@ class CategoryViewController: UITableViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        loadItems()
+        loadCategories()
     }
 
     // MARK: - Table add buttons
@@ -37,7 +37,7 @@ class CategoryViewController: UITableViewController {
             newCategory.name = textField.text! //name of new item equal to text we wrote in textfield
             
             self.categoryArray.append(newCategory) // appending item to out array
-            self.saveItems()
+            self.saveCategories()
         }
         // adding a textField to alert window
         alert.addTextField { (alertTextField) in
@@ -72,10 +72,25 @@ class CategoryViewController: UITableViewController {
             return cell
         }
     
+    // MARK: - Tableview Delegate Methods
+
+    override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        performSegue(withIdentifier: "goToItems", sender: self)
+    }
+    
+    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
+        let destinationVC = segue.destination as! ToDoListViewController
+        
+        if let indexPath = tableView.indexPathForSelectedRow {
+            destinationVC.selectedCategory = categoryArray[indexPath.row]
+        }
+    }
+    
+    
     // MARK: - Data Manipulation Methods (save/load)
     
     // this func saving new items to data base
-    func saveItems() {
+    func saveCategories() {
        
         do {
            try context.save()
@@ -86,7 +101,7 @@ class CategoryViewController: UITableViewController {
     }
     
     //this func load existing items to our screen
-    func loadItems(with request: NSFetchRequest<Category> = Category.fetchRequest()) {
+    func loadCategories(with request: NSFetchRequest<Category> = Category.fetchRequest()) {
         //here we have to write NSFetchRequest just because
     
         do{
@@ -99,4 +114,4 @@ class CategoryViewController: UITableViewController {
     }
 }
 
-// MARK: - Tableview Delegate Methods
+
